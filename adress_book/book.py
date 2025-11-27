@@ -3,6 +3,7 @@ Module for managing an address book with support for contacts, phones, and valid
 Uses OOP, inheritance, UserDict, and strict typing.
 """
 
+from datetime import datetime, timedelta
 from collections import UserDict
 from functools import wraps
 from typing import Optional, List, Callable
@@ -94,10 +95,15 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            pass
+            datetime.strptime(value, "%d.%m.%Y")
         except ValueError:
             raise ValueError('Invalid date format. Use DD.MM.YYYY')
+        super().__init__(value)
 
+    @property
+    def date(self) -> datetime:
+        return datetime.strptime(self.value, "%d.%m.%Y").date()
+    
 class Record:
     """
     Class for storing contact information.
@@ -116,6 +122,7 @@ class Record:
         self.phones: List[Phone] = []
         self.birthday = None
     
+    @input_error
     def add_phone(self, phone: str) -> None:
         """
         Adds a phone number to a contact.
@@ -129,9 +136,10 @@ class Record:
         self.phones.append(Phone(phone))
     
     @input_error
-    def add_birthday(self, birthday: str):
-        pass
+    def add_birthday(self, args: str):
+        self.birthday = Birthday(args)
 
+    @input_error
     def remove_phone(self, phone: str) -> None:
         """
         Removes all occurrences of the specified phone number.
@@ -142,6 +150,7 @@ class Record:
         find = self.find_phone(phone)
         self.phones.remove(find)
 
+    @input_error
     def edit_phone(self, old_phone: str, new_phone: str) -> None:
         """
         Replaces the first old number found with the new one.
@@ -159,6 +168,7 @@ class Record:
         self.remove_phone(old_phone)
         self.phones.append(Phone(new_phone))
         
+    @input_error
     def find_phone(self, phone: str) -> Optional[Phone]:
         """
         Searches for a phone number in the contact list.
@@ -179,7 +189,7 @@ class Record:
         
     def __str__(self) -> str:
         """Returns a human-readable representation of the contact."""
-        return f"Contact name: {self.name.value}, phones: {"; ".join(p.value for p in self.phones)}"
+        return f"Contact name: {self.name.value}, phones: {"; ".join(p.value for p in self.phones)}, birthday: {self.birthday}" if self.birthday else f"Contact name: {self.name.value}, phones: {"; ".join(p.value for p in self.phones)}"
     
 class AddressBook(UserDict):
     """
@@ -188,6 +198,7 @@ class AddressBook(UserDict):
     Inherited from UserDict. Keys are names (str), values are Record objects.
     """
 
+    @input_error
     def add_record(self, record: Record) -> None:
         """
         Adds an entry to the address book.
@@ -197,6 +208,20 @@ class AddressBook(UserDict):
         """
         self.data[record.name.value] = record
 
+    @input_error
+    # def add_contact(*args, book: AddressBook):
+    #     name, phone, *_ = args
+    #     record = book.find(name)
+    #     message = 'Contact update.'
+    #     if record is None:
+    #         record = Record(name)
+    #         book.add_record(record)
+    #         massage = 'Contact added.'
+    #     if phone:
+    #         record.add_phone(phone)
+    #     return massage
+
+    @input_error
     def find(self, name: str) -> Optional[Record]:
         """
         Finds a contact by name.
@@ -209,6 +234,7 @@ class AddressBook(UserDict):
         """
         return self.data.get(name)
 
+    @input_error
     def delete(self, name: str) -> None:
         """
         Deletes a contact by name.
@@ -219,8 +245,12 @@ class AddressBook(UserDict):
         if name in self.data:
             del self.data[name]
     
+    @input_error
     def get_incoming_birthdays(self):
-        pass
+        week = datetime.now() + timedelta(days=7)
+        for name, record in self.data.items():
+            if record.birthday.date() < week:
+                print(f"{name}: {record.birthday}")
 
     def __str__(self) -> str:
         """Returns a string representation of the entire book."""
@@ -257,3 +287,8 @@ if __name__ == "__main__":
     book.delete('John')
     print(book)
 
+    jane_record.add_birthday("29.11.2005")
+    print(jane_record.birthday)
+
+    jane_record.birthday = Birthday("29.11.2005")
+    print(jane_record)
