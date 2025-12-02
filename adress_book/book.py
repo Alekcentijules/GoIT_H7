@@ -209,19 +209,6 @@ class AddressBook(UserDict):
         self.data[record.name.value] = record
 
     @input_error
-    # def add_contact(*args, book: AddressBook):
-    #     name, phone, *_ = args
-    #     record = book.find(name)
-    #     message = 'Contact update.'
-    #     if record is None:
-    #         record = Record(name)
-    #         book.add_record(record)
-    #         massage = 'Contact added.'
-    #     if phone:
-    #         record.add_phone(phone)
-    #     return massage
-
-    @input_error
     def find(self, name: str) -> Optional[Record]:
         """
         Finds a contact by name.
@@ -247,10 +234,27 @@ class AddressBook(UserDict):
     
     @input_error
     def get_incoming_birthdays(self):
-        week = datetime.now() + timedelta(days=7)
+        today = datetime.today().date()
+        upcoming = []
         for name, record in self.data.items():
-            if record.birthday.date() < week:
-                print(f"{name}: {record.birthday}")
+            if not record.birthday:
+                continue
+            birthday = record.birthday.date.replace(year=today.year)
+            if birthday < today:
+                birthday = birthday.replace(year=today.year + 1)
+            if today <= birthday <= today + timedelta(days=7):    
+                if birthday.weekday() >= 5:
+                    days_to_monday = 7 - birthday.weekday()
+                    cong_day = birthday + timedelta(days=days_to_monday)
+                else:
+                    cong_day = birthday
+                upcoming.append({
+                    "name": name, "birthday": cong_day.strftime("%d.%m.%Y")
+                })
+        return "\n".join(
+            f"{item['name']} — congratulate day: {item['birthday']}"
+            for item in upcoming 
+        )
 
     def __str__(self) -> str:
         """Returns a string representation of the entire book."""
@@ -292,3 +296,5 @@ if __name__ == "__main__":
 
     jane_record.birthday = Birthday("29.11.2005")
     print(jane_record)
+
+    print(book.get_incoming_birthdays())
