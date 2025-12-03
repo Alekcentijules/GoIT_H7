@@ -22,16 +22,13 @@ def input_error(func: callable) -> Callable:
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except ValueError:
-            return "Provide name and phone please."
+        except (ValueError, IndexError) as err:
+            return "Not enough arguments."
         except KeyError:
             return "Contact not found."
-        except IndexError:
-            return "Not enough arguments."
         except Exception as err:
             return f"Error: {err}"
     return inner
-
 class Field:
     """
     Base class for record fields.
@@ -87,7 +84,7 @@ class Phone(Field):
             ValueError: If the length is not 10 or contains non-numeric characters.
         """
         if len(value) != 10:
-            raise ValueError("The lenth of the telephon number must be 10 numbers.")
+            raise ValueError("The length of the telephone number must be 10 numbers.")
         if not value.isdigit():
             raise ValueError("Value must consist of numbers.")
         super().__init__(value)
@@ -121,8 +118,7 @@ class Record:
         self.name = Name(name)
         self.phones: List[Phone] = []
         self.birthday = None
-    
-    @input_error
+
     def add_phone(self, phone: str) -> None:
         """
         Adds a phone number to a contact.
@@ -135,11 +131,9 @@ class Record:
         """
         self.phones.append(Phone(phone))
     
-    @input_error
     def add_birthday(self, args: str):
         self.birthday = Birthday(args)
 
-    @input_error
     def remove_phone(self, phone: str) -> None:
         """
         Removes all occurrences of the specified phone number.
@@ -150,7 +144,6 @@ class Record:
         find = self.find_phone(phone)
         self.phones.remove(find)
 
-    @input_error
     def edit_phone(self, old_phone: str, new_phone: str) -> None:
         """
         Replaces the first old number found with the new one.
@@ -168,7 +161,6 @@ class Record:
         self.remove_phone(old_phone)
         self.phones.append(Phone(new_phone))
         
-    @input_error
     def find_phone(self, phone: str) -> Optional[Phone]:
         """
         Searches for a phone number in the contact list.
@@ -198,7 +190,6 @@ class AddressBook(UserDict):
     Inherited from UserDict. Keys are names (str), values are Record objects.
     """
 
-    @input_error
     def add_record(self, record: Record) -> None:
         """
         Adds an entry to the address book.
@@ -208,7 +199,6 @@ class AddressBook(UserDict):
         """
         self.data[record.name.value] = record
 
-    @input_error
     def find(self, name: str) -> Optional[Record]:
         """
         Finds a contact by name.
@@ -221,7 +211,6 @@ class AddressBook(UserDict):
         """
         return self.data.get(name)
 
-    @input_error
     def delete(self, name: str) -> None:
         """
         Deletes a contact by name.
@@ -232,16 +221,16 @@ class AddressBook(UserDict):
         if name in self.data:
             del self.data[name]
     
-    @input_error
-    def get_incoming_birthdays(self):
+    def get_upcoming_birthdays(self):
         today = datetime.today().date()
         upcoming = []
-        for name, record in self.data.items():
+
+        for record in self.data.values():
             if not record.birthday:
                 continue
             birthday = record.birthday.date.replace(year=today.year)
             if birthday < today:
-                birthday = birthday.replace(year=today.year + 1)
+                birthday = birthday.replace(year=today.year + 1)               
             if today <= birthday <= today + timedelta(days=7):    
                 if birthday.weekday() >= 5:
                     days_to_monday = 7 - birthday.weekday()
@@ -249,52 +238,12 @@ class AddressBook(UserDict):
                 else:
                     cong_day = birthday
                 upcoming.append({
-                    "name": name, "birthday": cong_day.strftime("%d.%m.%Y")
-                })
-        return "\n".join(
-            f"{item['name']} — congratulate day: {item['birthday']}"
-            for item in upcoming 
-        )
+                    "name": record.name.value, 
+                    "birthday": cong_day.strftime("%d.%m.%Y")
+                    })
+        return upcoming
 
     def __str__(self) -> str:
         """Returns a string representation of the entire book."""
         return "\n".join(str(record) for record in self.data.values())
     
-
-# ————————————————————————
-# Example of use (for testing)
-# ————————————————————————      
-if __name__ == "__main__":
-    book = AddressBook()
-
-    johny_record = Record('Johny')
-    johny_record.add_phone('3939393939')
-    johny_record.add_phone('6464646333')
-
-    book.add_record(johny_record)
-
-    jane_record = Record('Jane')
-    jane_record.add_phone('4365464563')
-    jane_record.add_phone('4365464563')
-    book.add_record(jane_record)
-
-    print(book)
-
-    jane = book.find('Jane')
-    jane.edit_phone('4365464563', '2828282828')
-
-    print(jane)
-
-    found_phone = jane.find_phone('2828282828')
-    print(f"{jane.name}: {found_phone}")
-
-    book.delete('John')
-    print(book)
-
-    jane_record.add_birthday("29.11.2005")
-    print(jane_record.birthday)
-
-    jane_record.birthday = Birthday("29.11.2005")
-    print(jane_record)
-
-    print(book.get_incoming_birthdays())

@@ -1,5 +1,4 @@
 """Module with command handlers for the assistant bot."""
-
 from .book import Record, AddressBook, input_error
 
 @input_error
@@ -10,15 +9,16 @@ def handler_hello(args: list, book: AddressBook) -> str:
 @input_error
 def handler_add(args: list, book: AddressBook) -> str:
         """Handles the 'add' command — adds a new contact."""
-        name, phone, *_ = args
+        name = args[0]
+        phone = args[1]
         record = book.find(name)
-        message = 'Contact update.'
         if record is None:
             record = Record(name)
             book.add_record(record)
             message = 'Contact added.'
-        if phone:
-            record.add_phone(phone)
+        else:
+            message = 'Contact update.'
+        record.add_phone(phone)
         return message
 
 @input_error
@@ -26,8 +26,6 @@ def handler_change(args: list, book: AddressBook) -> str:
     """Handles the 'change' command — updates an existing contact."""
     name, old_phone, new_phone, *_ = args
     record = book.find(name)
-    if not record:
-        return 'Contact not found.'
     record.edit_phone(old_phone, new_phone)
     return 'Contact updated.'
 
@@ -36,37 +34,27 @@ def handler_phone(args: list, book: AddressBook) -> str:
     """Handles the 'phone' command — shows the phone number by name."""
     name = args[0]
     record = book.find(name)
-    if not record:
-        return 'Contact not found.'
     phones = "; ".join(p.value for p in record.phones)
     return f"{name}: {phones}"
 
 @input_error
 def handler_add_birthday(args: list, book: AddressBook):
-    if len(args) < 2:
-        return 'Enter name and birthday.'
     name, birthday, *_ = args
     record = book.find(name)
-    if not record:
-        return 'Contact not found.'
     record.add_birthday(birthday)
     return 'Birthday added.'
 
 @input_error
 def handler_show_birthday(args: list, book: AddressBook):
-    if not args:
-        return 'Enter a name pleace.'
     name = args[0]
     record = book.find(name)
-    if not record:
-        return 'Contact not found.'
     if not record.birthday:
         return f"{name} has no birthday saved."
     return f"{name}'s birthday: {record.birthday}"
 
 @input_error
 def handler_birthdays(args: list, book: AddressBook):
-    birthdays = book.get_incoming_birthdays()
+    birthdays = book.get_upcoming_birthdays()
     if not birthdays:
         return 'There are no birthdays in the next 7 days.'
     persons = []
@@ -84,7 +72,7 @@ def handler_all(args: list, book: AddressBook) -> str:
     """
     if not book.data:
         return 'No contacts saved.'
-    return "\n".join(f"{name}: {contact}" for name, contact in book.data.items())
+    return "\n".join(str(record) for record in book.data.values())
 
 @input_error
 def handler_goodbye(args: list, book: AddressBook) -> str:

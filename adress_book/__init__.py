@@ -10,5 +10,5 @@ from .handler_functions import (
     handler_show_birthday,
     COMMANDS
 )
-from .book import Record, AddressBook, input_error
+from .book import Record, AddressBook
 from .command_parser import parse_input
