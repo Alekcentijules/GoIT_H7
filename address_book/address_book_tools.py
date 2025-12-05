@@ -1,6 +1,11 @@
 """
-Module for managing an address book with support for contacts, phones, and validation.
-Uses OOP, inheritance, UserDict, and strict typing.
+Core module: data models and business logic.
+
+Contains:
+- Field, Name, Phone, Birthday — fields with validation
+- Record — contact
+- AddressBook — contact book (inherits UserDict)
+- input_error — universal error handling decorator
 """
 
 from datetime import datetime, timedelta
@@ -22,10 +27,12 @@ def input_error(func: callable) -> Callable:
     def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except (ValueError, IndexError) as err:
+        except (ValueError, IndexError):
             return "Not enough arguments."
         except KeyError:
             return "Contact not found."
+        except AttributeError:
+            return "Operation failed. Contact may not exist."
         except Exception as err:
             return f"Error: {err}"
     return inner
@@ -90,6 +97,7 @@ class Phone(Field):
         super().__init__(value)
 
 class Birthday(Field):
+    """Birthday. Format: DD.MM.YYYY."""
     def __init__(self, value):
         try:
             datetime.strptime(value, "%d.%m.%Y")
@@ -99,6 +107,7 @@ class Birthday(Field):
 
     @property
     def date(self) -> datetime:
+        """Returns a date object for comparison and calculation."""
         return datetime.strptime(self.value, "%d.%m.%Y").date()
     
 class Record:
@@ -132,6 +141,7 @@ class Record:
         self.phones.append(Phone(phone))
     
     def add_birthday(self, args: str):
+        """Sets the birthday."""
         self.birthday = Birthday(args)
 
     def remove_phone(self, phone: str) -> None:
@@ -181,7 +191,12 @@ class Record:
         
     def __str__(self) -> str:
         """Returns a human-readable representation of the contact."""
-        return f"Contact name: {self.name.value}, phones: {"; ".join(p.value for p in self.phones)}, birthday: {self.birthday}" if self.birthday else f"Contact name: {self.name.value}, phones: {"; ".join(p.value for p in self.phones)}"
+        phones = "; ".join(p.value for p in self.phones)
+        birthday = f", birthday: {self.birthday}" if self.birthday else ""
+        return f"Contact name: {self.name.value}, phones: {phones}{birthday}"
+    
+    def __repr__(self) -> str:
+        return f"Record(name={self.name.value}, phones={self.phones}, birthday=_{self.birthday})"
     
 class AddressBook(UserDict):
     """
@@ -222,6 +237,11 @@ class AddressBook(UserDict):
             del self.data[name]
     
     def get_upcoming_birthdays(self):
+        """
+        Returns a list of contacts whose birthdays are within the next `days` days.
+        
+        Takes into account the transfer to Monday if the birthday falls on a weekend.
+        """
         today = datetime.today().date()
         upcoming = []
 
@@ -247,3 +267,9 @@ class AddressBook(UserDict):
         """Returns a string representation of the entire book."""
         return "\n".join(str(record) for record in self.data.values())
     
+    def __repr__(self) -> str:
+        """
+        Returns an unambiguous string representation of the AddressBook.
+        Useful for debugging and logging.
+        """
+        return f"AddressBook({self.data})"
