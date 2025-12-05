@@ -1,5 +1,5 @@
 """Module with command handlers for the assistant bot."""
-from .address_book_tools import Record, AddressBook, input_error
+from .book_tools import Record, AddressBook, input_error
 
 @input_error
 def hello(args: list, address_book: AddressBook) -> str: 

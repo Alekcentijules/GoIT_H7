@@ -7,6 +7,6 @@ The module implements a console assistant bot for managing contacts:
 - searching for upcoming birthdays (with transfer to Monday)
 """
 
-from .address_book_tools import Record, AddressBook
+from .book_tools import Record, AddressBook
 from .command_parser import parse_input
 from .handler_functions import COMMANDS
