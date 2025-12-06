@@ -1,5 +1,6 @@
 """Module with command handlers for the assistant bot."""
-from .book_tools import Record, AddressBook, input_error
+from .book_tools import Record, AddressBook
+from .utils import input_error
 
 @input_error
 def hello(args: list, address_book: AddressBook) -> str: 
@@ -25,7 +26,7 @@ def add_contact(args: list, address_book: AddressBook) -> str:
 def change(args: list, address_book: AddressBook) -> str:
     """Handles the 'change' command — updates an existing contact."""
     if len(args) != 3:
-        raise ValueError('Enter name, old phone and new phone.')
+        return 'Enter name, old phone and new phone.'
     name, old_phone, new_phone, *_ = args
     record = address_book.find(name)
     record.edit_phone(old_phone, new_phone)
