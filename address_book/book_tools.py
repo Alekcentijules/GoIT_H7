@@ -5,37 +5,12 @@ Contains:
 - Field, Name, Phone, Birthday — fields with validation
 - Record — contact
 - AddressBook — contact book (inherits UserDict)
-- input_error — universal error handling decorator
 """
 
 from datetime import datetime, timedelta
 from collections import UserDict
-from functools import wraps
-from typing import Optional, List, Callable
+from typing import Optional, List
 
-def input_error(func: callable) -> Callable:
-    """
-    Decorator for handling errors in commands.
-
-    Args:
-        func (Callable): Command handler.
-
-    Returns:
-        Callable: Wrapped function.
-    """
-    @wraps(func)
-    def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except (ValueError, IndexError):
-            return "Not enough arguments."
-        except KeyError:
-            return "Contact not found."
-        except AttributeError:
-            return "Operation failed. Contact may not exist."
-        except Exception as err:
-            return f"Error: {err}"
-    return inner
 class Field:
     """
     Base class for record fields.
@@ -165,9 +140,13 @@ class Record:
         Raises:
             ValueError: If the old number is not found or the new one is invalid.
         """
-        if not any(p.value == old_phone for p in self.phones):
+        old_phone_obj = self.find_phone(old_phone)
+
+        if not old_phone_obj:
             raise ValueError("Old number not found.")
         
+        Phone(new_phone)
+
         self.remove_phone(old_phone)
         self.phones.append(Phone(new_phone))
         

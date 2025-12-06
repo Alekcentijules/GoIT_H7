@@ -24,6 +24,8 @@ def add_contact(args: list, address_book: AddressBook) -> str:
 @input_error
 def change(args: list, address_book: AddressBook) -> str:
     """Handles the 'change' command — updates an existing contact."""
+    if len(args) != 3:
+        raise ValueError('Enter name, old phone and new phone.')
     name, old_phone, new_phone, *_ = args
     record = address_book.find(name)
     record.edit_phone(old_phone, new_phone)
@@ -83,8 +85,8 @@ COMMANDS = {
     'add': add_contact,
     'change': change,
     'phone': phone,
-    'add_birthday': add_bday,
-    'show_birthday': show_bday,
+    'add-birthday': add_bday,
+    'show-birthday': show_bday,
     'birthdays': bdays,
     'all': all,
     'close': goodbye,
